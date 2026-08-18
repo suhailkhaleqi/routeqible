@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/screens/qibla_screen.dart';
 
 void main() {
@@ -15,12 +16,35 @@ class RouteQibleApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00695C),
-          brightness: Brightness.light,
+          seedColor: AppColors.tealAccent,
+          primary: AppColors.tealAccent,
+          surface: AppColors.surface,
+          onSurface: AppColors.textPrimary,
+          onSurfaceVariant: AppColors.textSecondary,
+          brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F7F6),
-        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+        scaffoldBackgroundColor: AppColors.background,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: AppColors.background,
+          foregroundColor: AppColors.tealAccent,
+          surfaceTintColor: Colors.transparent,
+          titleTextStyle: TextStyle(
+            color: AppColors.tealAccent,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.surfaceBorder, width: 1),
+          ),
+        ),
       ),
       home: const QiblaScreen(),
     );

@@ -298,13 +298,13 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
       onRefresh: _onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 8, bottom: 24),
+        padding: const EdgeInsets.only(top: 12, bottom: 24),
         children: [
           LocationCard(
             location: _location!,
             distanceToKaabaKm: _distanceToKaabaKm,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           CompassArrow(
             qiblaBearing: _qiblaBearing!,
             deviceHeading: _smoothedHeading,
@@ -314,7 +314,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
             showCalibrationHint: _showCalibrationHint,
             locationLabel: _location?.label,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           PrayerTimesList(prayerTimes: _prayerTimes!),
         ],
       ),
