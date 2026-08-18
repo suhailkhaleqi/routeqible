@@ -15,7 +15,10 @@ class LocationService {
       ),
     );
 
+    String? city;
+    String? country;
     String? label;
+
     try {
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
@@ -23,24 +26,30 @@ class LocationService {
       );
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
+        city = placemark.locality;
+        if (city == null || city.isEmpty) {
+          city = placemark.subAdministrativeArea ?? placemark.administrativeArea;
+        }
+        country = placemark.country;
         final parts = <String>[
-          if (placemark.locality != null && placemark.locality!.isNotEmpty)
-            placemark.locality!,
-          if (placemark.country != null && placemark.country!.isNotEmpty)
-            placemark.country!,
+          if (city != null && city.isNotEmpty) city,
+          if (country != null && country.isNotEmpty) country,
         ];
         if (parts.isNotEmpty) {
           label = parts.join(', ');
         }
       }
     } catch (_) {
-      // Geocoding is optional; coordinates are enough for v1.
+      // Geocoding is optional; coordinates are enough.
     }
 
     return AppLocation(
       latitude: position.latitude,
       longitude: position.longitude,
+      city: city,
+      country: country,
       label: label,
+      isManual: false,
     );
   }
 }

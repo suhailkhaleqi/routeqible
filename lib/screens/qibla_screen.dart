@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,11 +9,13 @@ import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/models/prayer_times.dart';
 import 'package:routeqible/services/compass_service.dart';
 import 'package:routeqible/services/location_service.dart';
+import 'package:routeqible/services/location_storage_service.dart';
 import 'package:routeqible/services/permission_service.dart';
 import 'package:routeqible/services/prayer_time_service.dart';
 import 'package:routeqible/services/qibla_calculator.dart';
 import 'package:routeqible/widgets/compass_arrow.dart';
 import 'package:routeqible/widgets/location_card.dart';
+import 'package:routeqible/widgets/location_search_modal.dart';
 import 'package:routeqible/widgets/prayer_times_list.dart';
 
 class QiblaScreen extends StatefulWidget {
@@ -23,12 +25,14 @@ class QiblaScreen extends StatefulWidget {
     this.locationService,
     this.compassService,
     this.prayerTimeService,
+    this.storageService,
   });
 
   final PermissionService? permissionService;
   final LocationService? locationService;
   final CompassService? compassService;
   final PrayerTimeService? prayerTimeService;
+  final LocationStorageService? storageService;
 
   @override
   State<QiblaScreen> createState() => _QiblaScreenState();
@@ -39,6 +43,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
   late final LocationService _locationService;
   late final CompassService _compassService;
   late final PrayerTimeService _prayerTimeService;
+  late final LocationStorageService _storageService;
 
   StreamSubscription<CompassEvent>? _compassSubscription;
 
@@ -51,30 +56,15 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
   double? _qiblaBearing;
   double? _distanceToKaabaKm;
 
-  // ── Heading state ──────────────────────────────────────────────────────────
-  // Smoothed heading from circular low-pass filter (true-north, 0-360).
   double? _smoothedHeading;
-
-  // Sensor accuracy in ±degrees — drives the calibration hint.
-  // Whether compass accuracy is poor enough to show a calibration hint.
   bool _showCalibrationHint = false;
 
-  // ── Alignment hysteresis ───────────────────────────────────────────────────
-  // Use a two-threshold approach: enter aligned at ≤3°, exit at >5°.
-  // This prevents flickering when hovering right at the boundary.
   bool _isAligned = false;
   static const double _alignEnterThreshold = 3.0;
   static const double _alignExitThreshold = 5.0;
-
-  // Fire haptics only on the transition into aligned.
   bool _wasAligned = false;
 
-  // ── Low-pass filter ────────────────────────────────────────────────────────
-  // Alpha=0.2: 20% of gap closed per tick. Responsive yet smooth.
   static const double _lpfAlpha = 0.2;
-
-  // ── Accuracy threshold ─────────────────────────────────────────────────────
-  // Show calibration hint when accuracy error > 20°.
   static const double _poorAccuracyThreshold = 20.0;
 
   @override
@@ -85,6 +75,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
     _locationService = widget.locationService ?? LocationService();
     _compassService = widget.compassService ?? CompassService();
     _prayerTimeService = widget.prayerTimeService ?? PrayerTimeService();
+    _storageService = widget.storageService ?? LocationStorageService();
     _initialize();
   }
 
@@ -114,6 +105,17 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
       _permissionDenied = false;
     });
 
+    final savedLocation = await _storageService.loadSavedLocation();
+    if (savedLocation != null && savedLocation.isManual) {
+      if (!mounted) return;
+      _applyLocationData(savedLocation);
+      return;
+    }
+
+    await _loadGpsLocation();
+  }
+
+  Future<void> _loadGpsLocation() async {
     try {
       var hasPermission = await _permissionService.hasLocationPermission();
       if (!hasPermission) {
@@ -130,30 +132,8 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
       }
 
       final location = await _locationService.getCurrentLocation();
-      final qiblaBearing = calculateQiblaBearing(
-        location.latitude,
-        location.longitude,
-      );
-      final prayerTimes = _prayerTimeService.calculatePrayerTimes(
-        latitude: location.latitude,
-        longitude: location.longitude,
-      );
-      final distanceMeters = Geolocator.distanceBetween(
-        location.latitude,
-        location.longitude,
-        kaabaLatitude,
-        kaabaLongitude,
-      );
-
       if (!mounted) return;
-
-      setState(() {
-        _location = location;
-        _qiblaBearing = qiblaBearing;
-        _prayerTimes = prayerTimes;
-        _distanceToKaabaKm = distanceMeters / 1000;
-        _isLoading = false;
-      });
+      _applyLocationData(location);
     } on LocationServiceDisabledException {
       if (!mounted) return;
       setState(() {
@@ -169,6 +149,53 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _applyLocationData(AppLocation location) {
+    final qiblaBearing = calculateQiblaBearing(
+      location.latitude,
+      location.longitude,
+    );
+    final prayerTimes = _prayerTimeService.calculatePrayerTimes(
+      latitude: location.latitude,
+      longitude: location.longitude,
+    );
+    final distanceMeters = Geolocator.distanceBetween(
+      location.latitude,
+      location.longitude,
+      kaabaLatitude,
+      kaabaLongitude,
+    );
+
+    setState(() {
+      _location = location;
+      _qiblaBearing = qiblaBearing;
+      _prayerTimes = prayerTimes;
+      _distanceToKaabaKm = distanceMeters / 1000;
+      _isLoading = false;
+    });
+  }
+
+  void _onSelectManualLocation(AppLocation loc) {
+    _applyLocationData(loc);
+    _storageService.saveLocation(loc);
+  }
+
+  Future<void> _onUseCurrentLocation() async {
+    await _storageService.clearSavedLocation();
+    await _loadGpsLocation();
+  }
+
+  void _openLocationSearch() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LocationSearchModal(
+        onSelectLocation: _onSelectManualLocation,
+        onUseCurrentLocation: _onUseCurrentLocation,
+      ),
+    );
+  }
+
   void _startCompass() {
     _compassSubscription?.cancel();
     _compassSubscription = _compassService.eventStream.listen((event) {
@@ -176,26 +203,19 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
       final raw = event.heading;
       if (raw == null) return;
 
-      // ── Circular low-pass filter ────────────────────────────────────────
-      // Standard linear averaging fails near the 0°/360° boundary
-      // (e.g. averaging 359° and 1° naively gives 180°). We normalise the
-      // delta to [-180, 180] first so the blend always takes the short arc.
       double smoothed;
       if (_smoothedHeading == null) {
         smoothed = raw;
       } else {
         double delta = raw - _smoothedHeading!;
-        // Normalise delta to [-180, 180].
         if (delta > 180) delta -= 360;
         if (delta < -180) delta += 360;
         smoothed = (_smoothedHeading! + _lpfAlpha * delta + 360) % 360;
       }
 
-      // ── Accuracy / calibration hint ─────────────────────────────────────
       final acc = event.accuracy;
       final poorAccuracy = acc != null && acc > _poorAccuracyThreshold;
 
-      // ── Alignment with hysteresis ───────────────────────────────────────
       bool aligned = _isAligned;
       final bearing = _qiblaBearing;
       if (bearing != null) {
@@ -217,31 +237,23 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
     });
   }
 
-  // ── Angle maths ─────────────────────────────────────────────────────────
-
-  /// Returns the signed shortest-arc difference from [current] to [target],
-  /// in the range [-180, 180].
-  /// Positive  → turn right (clockwise).
-  /// Negative  → turn left  (counter-clockwise).
   static double _shortestAngle(double target, double current) {
     return ((target - current + 540) % 360) - 180;
   }
 
-  /// Signed difference between Qibla and current heading [-180, 180].
   double? get _qiblaDiff {
     if (_qiblaBearing == null || _smoothedHeading == null) return null;
     return _shortestAngle(_qiblaBearing!, _smoothedHeading!);
   }
 
-  /// Human-readable turn instruction.
   String get _guidanceText {
     final diff = _qiblaDiff;
     if (diff == null) return 'Calibrating compass...';
     final absDiff = diff.abs();
-    if (absDiff <= _alignEnterThreshold) return "You're facing Qibla ✓";
-    if (absDiff <= 10) return 'Almost there — ${absDiff.round()}°';
-    if (diff > 0) return 'Turn right ${absDiff.round()}°';
-    return 'Turn left ${absDiff.round()}°';
+    if (absDiff <= _alignEnterThreshold) return "You're facing Qibla \u2713";
+    if (absDiff <= 10) return 'Almost there \u2014 ${absDiff.round()}\u00b0';
+    if (diff > 0) return 'Turn right ${absDiff.round()}\u00b0';
+    return 'Turn left ${absDiff.round()}\u00b0';
   }
 
   Future<void> _onRefresh() async {
@@ -273,7 +285,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Getting your location...'),
+            Text('Getting location...'),
           ],
         ),
       );
@@ -302,6 +314,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
         children: [
           LocationCard(
             location: _location!,
+            onTapSearch: _openLocationSearch,
             distanceToKaabaKm: _distanceToKaabaKm,
           ),
           const SizedBox(height: 16),
@@ -312,7 +325,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
             isAligned: _isAligned,
             guidanceText: _guidanceText,
             showCalibrationHint: _showCalibrationHint,
-            locationLabel: _location?.label,
+            locationLabel: _location?.displayLabel,
           ),
           const SizedBox(height: 16),
           PrayerTimesList(prayerTimes: _prayerTimes!),
