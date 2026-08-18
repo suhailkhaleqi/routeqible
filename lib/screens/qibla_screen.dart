@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:routeqible/constants/kaaba.dart';
 import 'package:routeqible/models/app_location.dart';
@@ -38,7 +40,7 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
   late final CompassService _compassService;
   late final PrayerTimeService _prayerTimeService;
 
-  StreamSubscription<double?>? _compassSubscription;
+  StreamSubscription<CompassEvent>? _compassSubscription;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -47,11 +49,33 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
   AppLocation? _location;
   DailyPrayerTimes? _prayerTimes;
   double? _qiblaBearing;
-  double? _deviceHeading;
   double? _distanceToKaabaKm;
 
-  double? _lastHeading;
-  static const double _headingDeadZone = 5;
+  // ── Heading state ──────────────────────────────────────────────────────────
+  // Smoothed heading from circular low-pass filter (true-north, 0-360).
+  double? _smoothedHeading;
+
+  // Sensor accuracy in ±degrees — drives the calibration hint.
+  // Whether compass accuracy is poor enough to show a calibration hint.
+  bool _showCalibrationHint = false;
+
+  // ── Alignment hysteresis ───────────────────────────────────────────────────
+  // Use a two-threshold approach: enter aligned at ≤3°, exit at >5°.
+  // This prevents flickering when hovering right at the boundary.
+  bool _isAligned = false;
+  static const double _alignEnterThreshold = 3.0;
+  static const double _alignExitThreshold = 5.0;
+
+  // Fire haptics only on the transition into aligned.
+  bool _wasAligned = false;
+
+  // ── Low-pass filter ────────────────────────────────────────────────────────
+  // Alpha=0.2: 20% of gap closed per tick. Responsive yet smooth.
+  static const double _lpfAlpha = 0.2;
+
+  // ── Accuracy threshold ─────────────────────────────────────────────────────
+  // Show calibration hint when accuracy error > 20°.
+  static const double _poorAccuracyThreshold = 20.0;
 
   @override
   void initState() {
@@ -147,17 +171,77 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
 
   void _startCompass() {
     _compassSubscription?.cancel();
-    _compassSubscription = _compassService.headingStream.listen((heading) {
-      if (!mounted || heading == null) return;
+    _compassSubscription = _compassService.eventStream.listen((event) {
+      if (!mounted) return;
+      final raw = event.heading;
+      if (raw == null) return;
 
-      if (_lastHeading != null) {
-        final delta = (heading - _lastHeading!).abs();
-        if (delta < _headingDeadZone) return;
+      // ── Circular low-pass filter ────────────────────────────────────────
+      // Standard linear averaging fails near the 0°/360° boundary
+      // (e.g. averaging 359° and 1° naively gives 180°). We normalise the
+      // delta to [-180, 180] first so the blend always takes the short arc.
+      double smoothed;
+      if (_smoothedHeading == null) {
+        smoothed = raw;
+      } else {
+        double delta = raw - _smoothedHeading!;
+        // Normalise delta to [-180, 180].
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        smoothed = (_smoothedHeading! + _lpfAlpha * delta + 360) % 360;
       }
 
-      _lastHeading = heading;
-      setState(() => _deviceHeading = heading);
+      // ── Accuracy / calibration hint ─────────────────────────────────────
+      final acc = event.accuracy;
+      final poorAccuracy = acc != null && acc > _poorAccuracyThreshold;
+
+      // ── Alignment with hysteresis ───────────────────────────────────────
+      bool aligned = _isAligned;
+      final bearing = _qiblaBearing;
+      if (bearing != null) {
+        final diff = _shortestAngle(bearing, smoothed).abs();
+        if (!aligned && diff <= _alignEnterThreshold) aligned = true;
+        if (aligned && diff > _alignExitThreshold) aligned = false;
+
+        if (aligned && !_wasAligned) {
+          HapticFeedback.mediumImpact();
+        }
+      }
+
+      setState(() {
+        _smoothedHeading = smoothed;
+        _showCalibrationHint = poorAccuracy;
+        _isAligned = aligned;
+        _wasAligned = aligned;
+      });
     });
+  }
+
+  // ── Angle maths ─────────────────────────────────────────────────────────
+
+  /// Returns the signed shortest-arc difference from [current] to [target],
+  /// in the range [-180, 180].
+  /// Positive  → turn right (clockwise).
+  /// Negative  → turn left  (counter-clockwise).
+  static double _shortestAngle(double target, double current) {
+    return ((target - current + 540) % 360) - 180;
+  }
+
+  /// Signed difference between Qibla and current heading [-180, 180].
+  double? get _qiblaDiff {
+    if (_qiblaBearing == null || _smoothedHeading == null) return null;
+    return _shortestAngle(_qiblaBearing!, _smoothedHeading!);
+  }
+
+  /// Human-readable turn instruction.
+  String get _guidanceText {
+    final diff = _qiblaDiff;
+    if (diff == null) return 'Calibrating compass...';
+    final absDiff = diff.abs();
+    if (absDiff <= _alignEnterThreshold) return "You're facing Qibla ✓";
+    if (absDiff <= 10) return 'Almost there — ${absDiff.round()}°';
+    if (diff > 0) return 'Turn right ${absDiff.round()}°';
+    return 'Turn left ${absDiff.round()}°';
   }
 
   Future<void> _onRefresh() async {
@@ -221,11 +305,14 @@ class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
             distanceToKaabaKm: _distanceToKaabaKm,
           ),
           const SizedBox(height: 24),
-          Center(
-            child: CompassArrow(
-              qiblaBearing: _qiblaBearing!,
-              deviceHeading: _deviceHeading,
-            ),
+          CompassArrow(
+            qiblaBearing: _qiblaBearing!,
+            deviceHeading: _smoothedHeading,
+            qiblaDiff: _qiblaDiff,
+            isAligned: _isAligned,
+            guidanceText: _guidanceText,
+            showCalibrationHint: _showCalibrationHint,
+            locationLabel: _location?.label,
           ),
           const SizedBox(height: 24),
           PrayerTimesList(prayerTimes: _prayerTimes!),
