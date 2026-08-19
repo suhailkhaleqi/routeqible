@@ -3,8 +3,14 @@ import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/core/localization/app_localizations.dart';
 import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/models/prayer_times.dart';
+import 'package:routeqible/services/prayer_time_service.dart';
+import 'package:routeqible/services/prayer_tracker_service.dart';
+import 'package:routeqible/services/qada_tracker_service.dart';
 import 'package:routeqible/widgets/location_card.dart';
+import 'package:routeqible/widgets/monthly_prayer_schedule_modal.dart';
 import 'package:routeqible/widgets/prayer_times_list.dart';
+import 'package:routeqible/widgets/prayer_tracker_card.dart';
+import 'package:routeqible/widgets/qada_tracker_card.dart';
 
 class PrayersScreen extends StatelessWidget {
   const PrayersScreen({
@@ -12,6 +18,9 @@ class PrayersScreen extends StatelessWidget {
     required this.location,
     required this.prayerTimes,
     required this.onTapSearchLocation,
+    required this.trackerService,
+    required this.prayerTimeService,
+    required this.qadaService,
     this.distanceToKaabaKm,
     this.isLoading = false,
     this.onRefresh,
@@ -20,9 +29,25 @@ class PrayersScreen extends StatelessWidget {
   final AppLocation? location;
   final DailyPrayerTimes? prayerTimes;
   final VoidCallback onTapSearchLocation;
+  final PrayerTrackerService trackerService;
+  final PrayerTimeService prayerTimeService;
+  final QadaTrackerService qadaService;
   final double? distanceToKaabaKm;
   final bool isLoading;
   final Future<void> Function()? onRefresh;
+
+  void _openMonthlySchedule(BuildContext context) {
+    if (location == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => MonthlyPrayerScheduleModal(
+        location: location!,
+        prayerTimeService: prayerTimeService,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +128,26 @@ class PrayersScreen extends StatelessWidget {
           distanceToKaabaKm: distanceToKaabaKm,
         ),
         const SizedBox(height: 16),
-        PrayerTimesList(prayerTimes: prayerTimes!),
+
+        // Section 1: Prayer Times List & View Full Month Button
+        PrayerTimesList(
+          prayerTimes: prayerTimes!,
+          onTapViewFullMonth: () => _openMonthlySchedule(context),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Section 2: Prayer Tracker & Streak System
+        PrayerTrackerCard(
+          trackerService: trackerService,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Section 3: Qada (Make-up) Prayers Tracker
+        QadaTrackerCard(
+          qadaService: qadaService,
+        ),
       ],
     );
 

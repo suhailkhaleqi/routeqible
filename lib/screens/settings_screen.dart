@@ -4,17 +4,21 @@ import 'package:routeqible/core/localization/app_localizations.dart';
 import 'package:routeqible/core/localization/language_service.dart';
 import 'package:routeqible/core/theme/theme_service.dart';
 import 'package:routeqible/screens/language_selection_screen.dart';
+import 'package:routeqible/screens/notification_settings_screen.dart';
 import 'package:routeqible/screens/theme_selection_screen.dart';
+import 'package:routeqible/services/notification_service.dart';
 
-/// Main Settings screen providing localized configuration for Language and Theme.
+/// Main Settings screen providing configuration for Language, Theme, and Prayer Notifications.
 class SettingsScreen extends StatelessWidget {
   final ThemeService themeService;
   final LanguageService languageService;
+  final NotificationService notificationService;
 
   const SettingsScreen({
     super.key,
     required this.themeService,
     required this.languageService,
+    required this.notificationService,
   });
 
   @override
@@ -27,11 +31,16 @@ class SettingsScreen extends StatelessWidget {
         title: Text(l10n.settings),
       ),
       body: ListenableBuilder(
-        listenable: Listenable.merge([themeService, languageService]),
+        listenable: Listenable.merge([themeService, languageService, notificationService]),
         builder: (context, _) {
           final selectedLanguage = languageService.currentLanguage;
           final selectedThemeText =
               themeService.isDarkMode ? l10n.darkMode : l10n.lightMode;
+
+          final isMasterNotificationOn = notificationService.masterEnabled;
+          final notificationSubtitle = isMasterNotificationOn
+              ? l10n.allPrayersActive
+              : l10n.notificationsDisabled;
 
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -69,6 +78,27 @@ class SettingsScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => ThemeSelectionScreen(
                         themeService: themeService,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Prayer Notifications Setting Tile
+              _buildSettingsTile(
+                context: context,
+                icon: isMasterNotificationOn
+                    ? Icons.notifications_active_rounded
+                    : Icons.notifications_outlined,
+                title: l10n.prayerNotifications,
+                subtitle: notificationSubtitle,
+                theme: theme,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => NotificationSettingsScreen(
+                        notificationService: notificationService,
                       ),
                     ),
                   );

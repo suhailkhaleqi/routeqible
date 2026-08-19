@@ -6,6 +6,9 @@ import 'package:routeqible/core/localization/supported_languages.dart';
 import 'package:routeqible/core/theme/app_theme.dart';
 import 'package:routeqible/core/theme/theme_service.dart';
 import 'package:routeqible/screens/main_navigation_screen.dart';
+import 'package:routeqible/services/notification_service.dart';
+import 'package:routeqible/services/prayer_tracker_service.dart';
+import 'package:routeqible/services/qada_tracker_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,26 +19,52 @@ void main() async {
   final languageService = LanguageService();
   await languageService.init();
 
-  runApp(RouteQibleApp(
-    themeService: themeService,
-    languageService: languageService,
-  ));
+  final notificationService = NotificationService();
+  await notificationService.init();
+
+  final trackerService = PrayerTrackerService();
+  await trackerService.init();
+
+  final qadaService = QadaTrackerService();
+  await qadaService.init();
+
+  runApp(
+    RouteQibleApp(
+      themeService: themeService,
+      languageService: languageService,
+      notificationService: notificationService,
+      trackerService: trackerService,
+      qadaService: qadaService,
+    ),
+  );
 }
 
 class RouteQibleApp extends StatelessWidget {
   final ThemeService themeService;
   final LanguageService languageService;
+  final NotificationService notificationService;
+  final PrayerTrackerService trackerService;
+  final QadaTrackerService qadaService;
 
   const RouteQibleApp({
     super.key,
     required this.themeService,
     required this.languageService,
+    required this.notificationService,
+    required this.trackerService,
+    required this.qadaService,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([themeService, languageService]),
+      listenable: Listenable.merge([
+        themeService,
+        languageService,
+        notificationService,
+        trackerService,
+        qadaService,
+      ]),
       builder: (context, _) {
         final currentLocale = languageService.currentLanguage.locale;
 
@@ -46,7 +75,9 @@ class RouteQibleApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: themeService.themeMode,
           locale: currentLocale,
-          supportedLocales: SupportedLanguages.languages.map((e) => e.locale).toList(),
+          supportedLocales: SupportedLanguages.languages
+              .map((e) => e.locale)
+              .toList(),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -56,6 +87,9 @@ class RouteQibleApp extends StatelessWidget {
           home: MainNavigationScreen(
             themeService: themeService,
             languageService: languageService,
+            notificationService: notificationService,
+            trackerService: trackerService,
+            qadaService: qadaService,
           ),
         );
       },

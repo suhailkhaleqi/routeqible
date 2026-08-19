@@ -53,6 +53,23 @@ class AppLocalizations {
       'holyQuran': 'Holy Quran',
       'routeQible': 'RouteQibla',
       'allPrayersPassed': 'All prayers for today have passed. Next: Fajr tomorrow.',
+      'viewFullMonth': 'View Full Month',
+      'prayerTracker': 'PRAYER TRACKER',
+      'tapEachPrayer': 'Tap each prayer below after you complete it',
+      'completeAll5': 'Complete all 5 in one day to lock in that day and grow your streak.',
+      'streak': 'Streak',
+      'sunrise': 'Sunrise',
+      'qadaTitle': 'Qada: make-up prayers',
+      'owed': 'owed',
+      'whatIsQada': 'What is Qada?',
+      'qadaDescription': 'Qada are obligatory prayers you missed and intend to make up. Track what you owe, then tap - each time you pray one back.',
+      'fajr': 'Fajr',
+      'dhuhr': 'Dhuhr',
+      'asr': 'Asr',
+      'maghrib': 'Maghrib',
+      'isha': 'Isha',
+      'notifications': 'Notifications',
+      'disabled': 'Disabled',
     },
     'tr': {
       'settings': 'Ayarlar',
@@ -91,6 +108,23 @@ class AppLocalizations {
       'holyQuran': 'Kur\'an-ı Kerim',
       'routeQible': 'RouteQibla',
       'allPrayersPassed': 'Bugünün tüm namaz vakitleri geçti. Sonraki: Yarın İmsak.',
+      'viewFullMonth': 'Tüm Ayı Gör',
+      'prayerTracker': 'NAMAZ TAKİBİ',
+      'tapEachPrayer': 'Kıldığınız her namazın ardından aşağıdaki kutucuğa dokunun',
+      'completeAll5': 'Günü tamamlayıp serinizi büyütmek için 5 vakit namazı işaretleyin.',
+      'streak': 'Seri',
+      'sunrise': 'Güneş',
+      'qadaTitle': 'Kaza Namazları',
+      'owed': 'borç',
+      'whatIsQada': 'Kaza Namazı Nedir?',
+      'qadaDescription': 'Kaza namazları, kılamadığınız ve kılmayı niyet ettiğiniz farz namazlardır. Borçlarınızı takip edin, kaza kıldıkça - butonuna dokunun.',
+      'fajr': 'İmsak',
+      'dhuhr': 'Öğle',
+      'asr': 'İkindi',
+      'maghrib': 'Akşam',
+      'isha': 'Yatsı',
+      'notifications': 'Bildirimler',
+      'disabled': 'Devre Dışı',
     },
     'ar': {
       'settings': 'الإعدادات',
@@ -129,6 +163,23 @@ class AppLocalizations {
       'holyQuran': 'القرآن الكريم',
       'routeQible': 'RouteQibla',
       'allPrayersPassed': 'انتهت جميع صلوات اليوم. الصلاة القادمة: الفجر غداً.',
+      'viewFullMonth': 'عرض الشهر كاملًا',
+      'prayerTracker': 'متابعة الصلاة',
+      'tapEachPrayer': 'انقر على كل صلاة أدناه بعد أدائها',
+      'completeAll5': 'أكمل الصلوات الخمس في يوم واحد للحفاظ على تتابعك.',
+      'streak': 'تتابع',
+      'sunrise': 'الشروق',
+      'qadaTitle': 'قضاء الصلوات',
+      'owed': 'مستحق',
+      'whatIsQada': 'ما هي صلاة القضاء؟',
+      'qadaDescription': 'الصلوات القضاء هي الصلوات المفروضة التي فاتتك وستقضيها. تتبع ما عليك، ثم انقر على - كلما قضيت صلاة.',
+      'fajr': 'الفجر',
+      'dhuhr': 'الظهر',
+      'asr': 'العصر',
+      'maghrib': 'المغرب',
+      'isha': 'العشاء',
+      'notifications': 'الإشعارات',
+      'disabled': 'معطلة',
     },
     'es': {
       'settings': 'Ajustes',
@@ -586,6 +637,27 @@ class AppLocalizations {
   String get holyQuran => _text('holyQuran');
   String get routeQible => _text('routeQible');
   String get allPrayersPassed => _text('allPrayersPassed');
+  String get prayerNotifications => _text('prayerNotifications');
+  String get notificationsEnabled => _text('notificationsEnabled');
+  String get notificationsDisabled => _text('notificationsDisabled');
+  String get allPrayersActive => _text('allPrayersActive');
+  String get viewFullMonth => _text('viewFullMonth');
+  String get prayerTracker => _text('prayerTracker');
+  String get tapEachPrayer => _text('tapEachPrayer');
+  String get completeAll5 => _text('completeAll5');
+  String get streak => _text('streak');
+  String get sunrise => _text('sunrise');
+  String get qadaTitle => _text('qadaTitle');
+  String get owed => _text('owed');
+  String get whatIsQada => _text('whatIsQada');
+  String get qadaDescription => _text('qadaDescription');
+  String get fajr => _text('fajr');
+  String get dhuhr => _text('dhuhr');
+  String get asr => _text('asr');
+  String get maghrib => _text('maghrib');
+  String get isha => _text('isha');
+  String get notifications => _text('notifications');
+  String get disabled => _text('disabled');
 
   String _text(String key) {
     final langCode = locale.languageCode.toLowerCase();

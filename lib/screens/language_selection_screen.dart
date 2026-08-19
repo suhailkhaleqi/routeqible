@@ -9,13 +9,11 @@ import 'package:routeqible/core/localization/supported_languages.dart';
 class LanguageSelectionScreen extends StatefulWidget {
   final LanguageService languageService;
 
-  const LanguageSelectionScreen({
-    super.key,
-    required this.languageService,
-  });
+  const LanguageSelectionScreen({super.key, required this.languageService});
 
   @override
-  State<LanguageSelectionScreen> createState() => _LanguageSelectionScreenState();
+  State<LanguageSelectionScreen> createState() =>
+      _LanguageSelectionScreenState();
 }
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
@@ -47,9 +45,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.language),
-      ),
+      appBar: AppBar(title: Text(l10n.language)),
       body: Column(
         children: [
           Expanded(
@@ -71,19 +67,24 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                       color: isSelected
                           ? AppColors.tealAccent
                           : (theme.cardTheme.shape as RoundedRectangleBorder?)
-                                  ?.side
-                                  .color ??
-                              theme.dividerColor,
+                                    ?.side
+                                    .color ??
+                                theme.dividerColor,
                       width: isSelected ? 1.5 : 1.0,
                     ),
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
                     title: Text(
                       lang.name,
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                         color: theme.colorScheme.onSurface,
                       ),
                     ),
@@ -102,7 +103,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           : Icons.radio_button_off_rounded,
                       color: isSelected
                           ? AppColors.tealAccent
-                          : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          : theme.colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.6,
+                            ),
                       size: 22,
                     ),
                     onTap: () {

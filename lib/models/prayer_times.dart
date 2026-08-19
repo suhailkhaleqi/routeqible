@@ -1,4 +1,4 @@
-enum PrayerName { fajr, dhuhr, asr, maghrib, isha }
+﻿enum PrayerName { fajr, sunrise, dhuhr, asr, maghrib, isha }
 
 class PrayerTimeEntry {
   const PrayerTimeEntry({
@@ -18,8 +18,10 @@ class DailyPrayerTimes {
   const DailyPrayerTimes({
     required this.prayers,
     required this.nextPrayer,
+    this.date,
   });
 
   final List<PrayerTimeEntry> prayers;
   final PrayerName? nextPrayer;
+  final DateTime? date;
 }

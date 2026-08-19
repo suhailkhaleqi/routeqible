@@ -18,8 +18,11 @@ import 'package:routeqible/screens/settings_screen.dart';
 import 'package:routeqible/services/compass_service.dart';
 import 'package:routeqible/services/location_service.dart';
 import 'package:routeqible/services/location_storage_service.dart';
+import 'package:routeqible/services/notification_service.dart';
 import 'package:routeqible/services/permission_service.dart';
 import 'package:routeqible/services/prayer_time_service.dart';
+import 'package:routeqible/services/prayer_tracker_service.dart';
+import 'package:routeqible/services/qada_tracker_service.dart';
 import 'package:routeqible/services/qibla_calculator.dart';
 import 'package:routeqible/widgets/location_search_modal.dart';
 
@@ -28,6 +31,9 @@ class MainNavigationScreen extends StatefulWidget {
     super.key,
     required this.themeService,
     required this.languageService,
+    required this.notificationService,
+    required this.trackerService,
+    required this.qadaService,
     this.permissionService,
     this.locationService,
     this.compassService,
@@ -37,6 +43,9 @@ class MainNavigationScreen extends StatefulWidget {
 
   final ThemeService themeService;
   final LanguageService languageService;
+  final NotificationService notificationService;
+  final PrayerTrackerService trackerService;
+  final QadaTrackerService qadaService;
   final PermissionService? permissionService;
   final LocationService? locationService;
   final CompassService? compassService;
@@ -159,6 +168,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     final prayerTimes = _prayerTimeService.calculatePrayerTimes(
       latitude: location.latitude,
       longitude: location.longitude,
+      countryName: location.displayCountry,
     );
     final distanceMeters = Geolocator.distanceBetween(
       location.latitude,
@@ -174,6 +184,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       _distanceToKaabaKm = distanceMeters / 1000;
       _isLoading = false;
     });
+
+    // Schedule local prayer notifications asynchronously
+    widget.notificationService.schedulePrayerNotifications(
+      prayerTimes: prayerTimes,
+      cityName: location.displayCity,
+    );
   }
 
   void _onSelectManualLocation(AppLocation loc) {
@@ -287,6 +303,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             location: _location,
             prayerTimes: _prayerTimes,
             onTapSearchLocation: _openLocationSearch,
+            trackerService: widget.trackerService,
+            prayerTimeService: _prayerTimeService,
+            qadaService: widget.qadaService,
             distanceToKaabaKm: _distanceToKaabaKm,
             isLoading: _isLoading,
             onRefresh: _loadData,
@@ -297,6 +316,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
           SettingsScreen(
             themeService: widget.themeService,
             languageService: widget.languageService,
+            notificationService: widget.notificationService,
           ),
         ],
       ),
