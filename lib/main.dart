@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
-import 'package:routeqible/screens/qibla_screen.dart';
+import 'package:routeqible/screens/main_navigation_screen.dart';
 
 void main() {
   runApp(const RouteQibleApp());
@@ -46,7 +46,7 @@ class RouteQibleApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const QiblaScreen(),
+      home: const MainNavigationScreen(),
     );
   }
 }
