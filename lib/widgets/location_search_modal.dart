@@ -1,6 +1,7 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
+import 'package:routeqible/core/localization/app_localizations.dart';
 import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/services/location_search_service.dart';
 
@@ -87,11 +88,16 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final cardColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final borderColor = (theme.cardTheme.shape as RoundedRectangleBorder?)?.side.color ?? theme.dividerColor;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
@@ -101,7 +107,7 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.textSecondary.withValues(alpha: 0.3),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -113,17 +119,17 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Select Location',
+                Text(
+                  l10n.selectLocation,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close, color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -138,14 +144,14 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
               controller: _controller,
               onChanged: _onQueryChanged,
               autofocus: true,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: theme.colorScheme.onSurface),
               decoration: InputDecoration(
-                hintText: 'Search city or country...',
-                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
+                hintText: l10n.searchCityOrCountry,
+                hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
                 prefixIcon: const Icon(Icons.search, color: AppColors.tealAccent),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                        icon: Icon(Icons.clear, color: theme.colorScheme.onSurfaceVariant),
                         onPressed: () {
                           _controller.clear();
                           _onQueryChanged('');
@@ -153,15 +159,15 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: cardColor,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.surfaceBorder),
+                  borderSide: BorderSide(color: borderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.surfaceBorder),
+                  borderSide: BorderSide(color: borderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -189,34 +195,34 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.tealAccent.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.my_location, color: AppColors.tealAccent, size: 22),
-                    SizedBox(width: 12),
+                    const Icon(Icons.my_location, color: AppColors.tealAccent, size: 22),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Use my current location',
-                            style: TextStyle(
+                            l10n.useMyCurrentLocation,
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: AppColors.tealAccent,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'Detect coordinates automatically via GPS',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: AppColors.tealAccent),
+                    const Icon(Icons.chevron_right, color: AppColors.tealAccent),
                   ],
                 ),
               ),
@@ -224,28 +230,28 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
           ),
 
           const SizedBox(height: 12),
-          const Divider(color: AppColors.surfaceBorder, height: 1),
+          Divider(color: borderColor, height: 1),
 
           // Search results or loading state
           Expanded(
-            child: _buildResultsList(),
+            child: _buildResultsList(theme),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildResultsList() {
+  Widget _buildResultsList(ThemeData theme) {
     if (_isSearching) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: AppColors.tealAccent),
-            SizedBox(height: 12),
+            const CircularProgressIndicator(color: AppColors.tealAccent),
+            const SizedBox(height: 12),
             Text(
               'Searching locations...',
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -271,17 +277,17 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.search_off, size: 44, color: AppColors.textSecondary),
-              SizedBox(height: 12),
+            children: [
+              Icon(Icons.search_off, size: 44, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(height: 12),
               Text(
                 'No locations found.',
-                style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 'Try searching for a city or country name.',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
               ),
             ],
           ),
@@ -289,37 +295,40 @@ class _LocationSearchModalState extends State<LocationSearchModal> {
       );
     }
 
+    final cardColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final borderColor = (theme.cardTheme.shape as RoundedRectangleBorder?)?.side.color ?? theme.dividerColor;
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _results.length,
-      separatorBuilder: (context, index) => const Divider(color: AppColors.surfaceBorder, height: 1, indent: 56),
+      separatorBuilder: (context, index) => Divider(color: borderColor, height: 1, indent: 56),
       itemBuilder: (context, index) {
         final loc = _results[index];
         return ListTile(
           leading: Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
+            decoration: BoxDecoration(
+              color: cardColor,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.location_city_outlined, color: AppColors.tealAccent, size: 20),
           ),
           title: Text(
             loc.displayCity,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           subtitle: Text(
             loc.displayCountry.isNotEmpty ? loc.displayCountry : '${loc.latitude.toStringAsFixed(2)}, ${loc.longitude.toStringAsFixed(2)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          trailing: const Icon(Icons.north_west, size: 16, color: AppColors.textSecondary),
+          trailing: Icon(Icons.north_west, size: 16, color: theme.colorScheme.onSurfaceVariant),
           onTap: () {
             Navigator.of(context).pop();
             widget.onSelectLocation(loc);

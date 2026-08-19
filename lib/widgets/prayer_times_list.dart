@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/models/prayer_times.dart';
 
@@ -12,15 +12,19 @@ class PrayerTimesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final borderColor = (theme.cardTheme.shape as RoundedRectangleBorder?)?.side.color ?? theme.dividerColor;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.surfaceBorder, width: 1),
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -31,25 +35,25 @@ class PrayerTimesList extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Text(
                 'Prayer Times',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
             if (prayerTimes.nextPrayer == null)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Text(
                   'All prayers for today have passed. Next: Fajr tomorrow.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -78,7 +82,7 @@ class PrayerTimesList extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isNext ? FontWeight.bold : FontWeight.w500,
-                      color: isNext ? AppColors.tealAccent : AppColors.textPrimary,
+                      color: isNext ? AppColors.tealAccent : theme.colorScheme.onSurface,
                     ),
                   ),
                   trailing: Text(
@@ -86,7 +90,7 @@ class PrayerTimesList extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isNext ? FontWeight.bold : FontWeight.w500,
-                      color: isNext ? AppColors.tealAccent : AppColors.textSecondary,
+                      color: isNext ? AppColors.tealAccent : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),

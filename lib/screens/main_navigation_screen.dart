@@ -6,6 +6,9 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/constants/kaaba.dart';
+import 'package:routeqible/core/localization/app_localizations.dart';
+import 'package:routeqible/core/localization/language_service.dart';
+import 'package:routeqible/core/theme/theme_service.dart';
 import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/models/prayer_times.dart';
 import 'package:routeqible/screens/prayers_screen.dart';
@@ -23,6 +26,8 @@ import 'package:routeqible/widgets/location_search_modal.dart';
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({
     super.key,
+    required this.themeService,
+    required this.languageService,
     this.permissionService,
     this.locationService,
     this.compassService,
@@ -30,6 +35,8 @@ class MainNavigationScreen extends StatefulWidget {
     this.storageService,
   });
 
+  final ThemeService themeService;
+  final LanguageService languageService;
   final PermissionService? permissionService;
   final LocationService? locationService;
   final CompassService? compassService;
@@ -241,18 +248,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     return _shortestAngle(_qiblaBearing!, _smoothedHeading!);
   }
 
-  String get _guidanceText {
+  String getGuidanceText(AppLocalizations l10n) {
     final diff = _qiblaDiff;
-    if (diff == null) return 'Calibrating compass...';
+    if (diff == null) return l10n.calibratingCompass;
     final absDiff = diff.abs();
-    if (absDiff <= _alignEnterThreshold) return "You're facing Qibla \u2713";
-    if (absDiff <= 10) return 'Almost there \u2014 ${absDiff.round()}\u00b0';
-    if (diff > 0) return 'Turn right ${absDiff.round()}\u00b0';
-    return 'Turn left ${absDiff.round()}\u00b0';
+    if (absDiff <= _alignEnterThreshold) return l10n.facingQibla;
+    if (absDiff <= 10) return '${l10n.almostThere} \u2014 ${absDiff.round()}\u00b0';
+    if (diff > 0) return '${l10n.turnRight} ${absDiff.round()}\u00b0';
+    return '${l10n.turnLeft} ${absDiff.round()}\u00b0';
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final navTheme = theme.bottomNavigationBarTheme;
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -264,7 +275,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             deviceHeading: _smoothedHeading,
             qiblaDiff: _qiblaDiff,
             isAligned: _isAligned,
-            guidanceText: _guidanceText,
+            guidanceText: getGuidanceText(l10n),
             showCalibrationHint: _showCalibrationHint,
             onTapSearchLocation: _openLocationSearch,
             distanceToKaabaKm: _distanceToKaabaKm,
@@ -280,17 +291,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             isLoading: _isLoading,
             onRefresh: _loadData,
           ),
-          // 2: Quran (Placeholder Screen)
+          // 2: Quran Screen
           const QuranScreen(),
-          // 3: Settings (Placeholder Screen)
-          const SettingsScreen(),
+          // 3: Settings Screen
+          SettingsScreen(
+            themeService: widget.themeService,
+            languageService: widget.languageService,
+          ),
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: navTheme.backgroundColor ?? theme.colorScheme.surface,
           border: Border(
-            top: BorderSide(color: AppColors.surfaceBorder, width: 1),
+            top: BorderSide(
+              color: theme.dividerColor,
+              width: 1,
+            ),
           ),
         ),
         child: BottomNavigationBar(
@@ -301,32 +318,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             });
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.surface,
-          selectedItemColor: AppColors.tealAccent,
-          unselectedItemColor: AppColors.textSecondary,
+          backgroundColor: navTheme.backgroundColor ?? theme.colorScheme.surface,
+          selectedItemColor: navTheme.selectedItemColor ?? AppColors.tealAccent,
+          unselectedItemColor: navTheme.unselectedItemColor ?? theme.colorScheme.onSurfaceVariant,
           selectedFontSize: 12,
           unselectedFontSize: 12,
           elevation: 0,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: l10n.home,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.mosque_outlined),
-              activeIcon: Icon(Icons.mosque),
-              label: 'Prayers',
+              icon: const Icon(Icons.mosque_outlined),
+              activeIcon: const Icon(Icons.mosque),
+              label: l10n.prayers,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined),
-              activeIcon: Icon(Icons.menu_book),
-              label: 'Quran',
+              icon: const Icon(Icons.menu_book_outlined),
+              activeIcon: const Icon(Icons.menu_book),
+              label: l10n.quran,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Settings',
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: l10n.settings,
             ),
           ],
         ),

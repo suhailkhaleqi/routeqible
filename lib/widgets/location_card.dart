@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/models/app_location.dart';
 
@@ -17,6 +17,9 @@ class LocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isManual = location.isManual;
+    final theme = Theme.of(context);
+    final cardColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final borderColor = (theme.cardTheme.shape as RoundedRectangleBorder?)?.side.color ?? theme.dividerColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -29,12 +32,12 @@ class LocationCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.surfaceBorder, width: 1),
+                border: Border.all(color: borderColor, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -48,7 +51,7 @@ class LocationCard extends StatelessWidget {
                     'Search city or country...',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary.withValues(alpha: 0.8),
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const Spacer(),
@@ -74,12 +77,12 @@ class LocationCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.surfaceBorder, width: 1),
+                border: Border.all(color: borderColor, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -110,10 +113,10 @@ class LocationCard extends StatelessWidget {
                           children: [
                             Text(
                               location.displayCity,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                             if (isManual) ...[
@@ -141,9 +144,9 @@ class LocationCard extends StatelessWidget {
                           location.displayCountry.isNotEmpty
                               ? location.displayCountry
                               : '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         if (distanceToKaabaKm != null) ...[
@@ -160,7 +163,7 @@ class LocationCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 22),
+                  Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant, size: 22),
                 ],
               ),
             ),

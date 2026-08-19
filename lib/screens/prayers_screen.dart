@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
+import 'package:routeqible/core/localization/app_localizations.dart';
 import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/models/prayer_times.dart';
 import 'package:routeqible/widgets/location_card.dart';
@@ -25,15 +26,17 @@ class PrayersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prayer Times'),
+        title: Text(l10n.prayerTimes),
         actions: [
           if (onRefresh != null)
             IconButton(
               onPressed: isLoading ? null : () => onRefresh!(),
               icon: const Icon(Icons.refresh),
-              tooltip: 'Refresh',
+              tooltip: l10n.retry,
             ),
         ],
       ),
@@ -42,16 +45,19 @@ class PrayersScreen extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     if (isLoading && prayerTimes == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: AppColors.tealAccent),
-            SizedBox(height: 16),
+            const CircularProgressIndicator(color: AppColors.tealAccent),
+            const SizedBox(height: 16),
             Text(
-              'Calculating prayer times...',
-              style: TextStyle(color: AppColors.textSecondary),
+              l10n.prayerTimesUnavailable,
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -67,16 +73,16 @@ class PrayersScreen extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.orange),
               const SizedBox(height: 16),
-              const Text(
-                'Prayer times unavailable. Please select a valid location.',
+              Text(
+                l10n.prayerTimesUnavailable,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: theme.colorScheme.onSurface),
               ),
               const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: onTapSearchLocation,
                 icon: const Icon(Icons.search),
-                label: const Text('Select Location'),
+                label: Text(l10n.selectLocation),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.tealAccent,
                 ),
