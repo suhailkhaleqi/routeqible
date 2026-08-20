@@ -1,4 +1,4 @@
-class AppLocation {
+﻿class AppLocation {
   const AppLocation({
     required this.latitude,
     required this.longitude,
@@ -6,6 +6,7 @@ class AppLocation {
     this.country,
     this.label,
     this.isManual = false,
+    this.utcOffsetMinutes,
   });
 
   final double latitude;
@@ -14,6 +15,10 @@ class AppLocation {
   final String? country;
   final String? label;
   final bool isManual;
+  final int? utcOffsetMinutes;
+
+  Duration? get customUtcOffset =>
+      utcOffsetMinutes != null ? Duration(minutes: utcOffsetMinutes!) : null;
 
   String get displayCity {
     if (city != null && city!.isNotEmpty) return city!;
@@ -43,6 +48,7 @@ class AppLocation {
         'country': country,
         'label': label,
         'isManual': isManual,
+        'utcOffsetMinutes': utcOffsetMinutes,
       };
 
   factory AppLocation.fromJson(Map<String, dynamic> json) => AppLocation(
@@ -52,5 +58,6 @@ class AppLocation {
         country: json['country'] as String?,
         label: json['label'] as String?,
         isManual: json['isManual'] as bool? ?? false,
+        utcOffsetMinutes: json['utcOffsetMinutes'] as int?,
       );
 }

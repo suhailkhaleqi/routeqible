@@ -1,8 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/models/app_location.dart';
+import 'package:routeqible/models/prayer_times.dart';
 import 'package:routeqible/widgets/compass_arrow.dart';
-import 'package:routeqible/widgets/location_card.dart';
+import 'package:routeqible/widgets/horizontal_prayer_times_card.dart';
 
 class QiblaScreen extends StatelessWidget {
   const QiblaScreen({
@@ -15,6 +16,7 @@ class QiblaScreen extends StatelessWidget {
     required this.guidanceText,
     required this.showCalibrationHint,
     required this.onTapSearchLocation,
+    this.prayerTimes,
     this.distanceToKaabaKm,
     this.isLoading = false,
     this.onRefresh,
@@ -28,6 +30,7 @@ class QiblaScreen extends StatelessWidget {
   final String guidanceText;
   final bool showCalibrationHint;
   final VoidCallback onTapSearchLocation;
+  final DailyPrayerTimes? prayerTimes;
   final double? distanceToKaabaKm;
   final bool isLoading;
   final Future<void> Function()? onRefresh;
@@ -36,7 +39,7 @@ class QiblaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('RouteQible'),
+        title: const Text('RouteQibla'),
         actions: [
           if (onRefresh != null)
             IconButton(
@@ -98,13 +101,13 @@ class QiblaScreen extends StatelessWidget {
 
     Widget content = Column(
       children: [
-        const SizedBox(height: 8),
-        LocationCard(
-          location: location!,
-          onTapSearch: onTapSearchLocation,
-          distanceToKaabaKm: distanceToKaabaKm,
+        // Horizontal Prayer Times Bar at top of Home page
+        HorizontalPrayerTimesCard(
+          prayerTimes: prayerTimes,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
+
+        // Compass Section
         Expanded(
           child: Center(
             child: SingleChildScrollView(

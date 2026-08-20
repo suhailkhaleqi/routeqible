@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +11,7 @@ import 'package:routeqible/core/localization/language_service.dart';
 import 'package:routeqible/core/theme/theme_service.dart';
 import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/models/prayer_times.dart';
+import 'package:routeqible/screens/menu_screen.dart';
 import 'package:routeqible/screens/prayers_screen.dart';
 import 'package:routeqible/screens/qibla_screen.dart';
 import 'package:routeqible/screens/quran_screen.dart';
@@ -56,7 +57,8 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> with WidgetsBindingObserver {
+class _MainNavigationScreenState extends State<MainNavigationScreen>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   int _currentIndex = 0;
 
   late final PermissionService _permissionService;
@@ -64,6 +66,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   late final CompassService _compassService;
   late final PrayerTimeService _prayerTimeService;
   late final LocationStorageService _storageService;
+
+  late final AnimationController _rotationController;
 
   StreamSubscription<CompassEvent>? _compassSubscription;
 
@@ -93,6 +97,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     _compassService = widget.compassService ?? CompassService();
     _prayerTimeService = widget.prayerTimeService ?? PrayerTimeService();
     _storageService = widget.storageService ?? LocationStorageService();
+
+    // Continuous rotation controller for outer center menu ring
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    )..repeat();
+
     _initialize();
   }
 
@@ -100,6 +111,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _compassSubscription?.cancel();
+    _rotationController.dispose();
     super.dispose();
   }
 
@@ -169,6 +181,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       latitude: location.latitude,
       longitude: location.longitude,
       countryName: location.displayCountry,
+      cityName: location.displayCity,
+      isManual: location.isManual,
+      customUtcOffset: location.customUtcOffset,
     );
     final distanceMeters = Geolocator.distanceBetween(
       location.latitude,
@@ -279,6 +294,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final navTheme = theme.bottomNavigationBarTheme;
+    final navBgColor = navTheme.backgroundColor ?? theme.colorScheme.surface;
 
     return Scaffold(
       body: IndexedStack(
@@ -294,6 +310,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             guidanceText: getGuidanceText(l10n),
             showCalibrationHint: _showCalibrationHint,
             onTapSearchLocation: _openLocationSearch,
+            prayerTimes: _prayerTimes,
             distanceToKaabaKm: _distanceToKaabaKm,
             isLoading: _isLoading,
             onRefresh: _loadData,
@@ -310,19 +327,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             isLoading: _isLoading,
             onRefresh: _loadData,
           ),
-          // 2: Quran Screen
+          // 2: Menu Screen (Center Tab)
+          MenuScreen(),
+          // 3: Quran Screen
           const QuranScreen(),
-          // 3: Settings Screen
+          // 4: Settings Screen
           SettingsScreen(
             themeService: widget.themeService,
             languageService: widget.languageService,
             notificationService: widget.notificationService,
+            location: _location,
+            onTapSearchLocation: _openLocationSearch,
+            distanceToKaabaKm: _distanceToKaabaKm,
           ),
         ],
       ),
+
+      // Custom 5-Item Bottom Navigation Bar featuring Elevated Animated Center Menu
       bottomNavigationBar: Container(
+        height: 72,
         decoration: BoxDecoration(
-          color: navTheme.backgroundColor ?? theme.colorScheme.surface,
+          color: navBgColor,
           border: Border(
             top: BorderSide(
               color: theme.dividerColor,
@@ -330,43 +355,228 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
             ),
           ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: navTheme.backgroundColor ?? theme.colorScheme.surface,
-          selectedItemColor: navTheme.selectedItemColor ?? AppColors.tealAccent,
-          unselectedItemColor: navTheme.unselectedItemColor ?? theme.colorScheme.onSurfaceVariant,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          elevation: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home),
-              label: l10n.home,
+        child: Row(
+          children: [
+            // 0: Home Tab
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                label: l10n.home,
+                index: 0,
+                theme: theme,
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.mosque_outlined),
-              activeIcon: const Icon(Icons.mosque),
-              label: l10n.prayers,
+            // 1: Prayers Tab
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.mosque_outlined,
+                activeIcon: Icons.mosque,
+                label: l10n.prayers,
+                index: 1,
+                theme: theme,
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.menu_book_outlined),
-              activeIcon: const Icon(Icons.menu_book),
-              label: l10n.quran,
+
+            // 2: Elevated Animated Center Menu Tab
+            Expanded(
+              child: _buildCenterMenuTab(
+                label: l10n.menu,
+                isSelected: _currentIndex == 2,
+                onTap: () => setState(() => _currentIndex = 2),
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              activeIcon: const Icon(Icons.settings),
-              label: l10n.settings,
+
+            // 3: Quran Tab
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.menu_book_outlined,
+                activeIcon: Icons.menu_book,
+                label: l10n.quran,
+                index: 3,
+                theme: theme,
+              ),
+            ),
+            // 4: Settings Tab
+            Expanded(
+              child: _buildNavItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: l10n.settings,
+                index: 4,
+                theme: theme,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required int index,
+    required ThemeData theme,
+  }) {
+    final isSelected = _currentIndex == index;
+    final color = isSelected
+        ? (Theme.of(context).bottomNavigationBarTheme.selectedItemColor ?? AppColors.tealAccent)
+        : (Theme.of(context).bottomNavigationBarTheme.unselectedItemColor ?? theme.colorScheme.onSurfaceVariant);
+
+    return InkWell(
+      onTap: () => setState(() => _currentIndex = index),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isSelected ? activeIcon : icon,
+            color: color,
+            size: 22,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCenterMenuTab({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Floating elevated circular button container
+          Transform.translate(
+            offset: const Offset(0, -10),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Continuous rotating outer translucent ring
+                RotationTransition(
+                  turns: _rotationController,
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFE5B842).withValues(alpha: isSelected ? 0.8 : 0.4),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 2,
+                          left: 23,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE5B842),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 2,
+                          left: 23,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE5B842),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 23,
+                          left: 2,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE5B842),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 23,
+                          right: 2,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE5B842),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Inner Warm Gold Circle Button
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5B842),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE5B842).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.wb_sunny_rounded,
+                      color: Color(0xFF0F2218),
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Menu Label
+          Transform.translate(
+            offset: const Offset(0, -6),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? const Color(0xFFE5B842) : const Color(0xFFE5B842).withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -3,22 +3,30 @@ import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/core/localization/app_localizations.dart';
 import 'package:routeqible/core/localization/language_service.dart';
 import 'package:routeqible/core/theme/theme_service.dart';
+import 'package:routeqible/models/app_location.dart';
 import 'package:routeqible/screens/language_selection_screen.dart';
 import 'package:routeqible/screens/notification_settings_screen.dart';
 import 'package:routeqible/screens/theme_selection_screen.dart';
 import 'package:routeqible/services/notification_service.dart';
+import 'package:routeqible/widgets/location_card.dart';
 
-/// Main Settings screen providing configuration for Language, Theme, and Prayer Notifications.
+/// Main Settings screen providing Location Search/Selection as well as configuration for Language, Theme, and Prayer Notifications.
 class SettingsScreen extends StatelessWidget {
   final ThemeService themeService;
   final LanguageService languageService;
   final NotificationService notificationService;
+  final AppLocation? location;
+  final VoidCallback? onTapSearchLocation;
+  final double? distanceToKaabaKm;
 
   const SettingsScreen({
     super.key,
     required this.themeService,
     required this.languageService,
     required this.notificationService,
+    this.location,
+    this.onTapSearchLocation,
+    this.distanceToKaabaKm,
   });
 
   @override
@@ -43,8 +51,20 @@ class SettingsScreen extends StatelessWidget {
               : l10n.notificationsDisabled;
 
           return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             children: [
+              // Relocated Location Search & Info Card (at the very top of Settings)
+              if (location != null && onTapSearchLocation != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: LocationCard(
+                    location: location!,
+                    onTapSearch: onTapSearchLocation!,
+                    distanceToKaabaKm: distanceToKaabaKm,
+                  ),
+                ),
+              ],
+
               // Language Setting Tile
               _buildSettingsTile(
                 context: context,

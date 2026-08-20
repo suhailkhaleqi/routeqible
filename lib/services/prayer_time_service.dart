@@ -1,9 +1,9 @@
-import 'package:adhan/adhan.dart';
-import 'package:intl/intl.dart';
+﻿import 'package:adhan/adhan.dart';
 import 'package:routeqible/models/prayer_times.dart';
+import 'package:routeqible/services/timezone_service.dart';
 
 class PrayerTimeService {
-  /// Dynamically resolves accurate calculation parameters based on geographic location/country.
+  /// Dynamically resolves accurate regional calculation parameters based on country/region.
   CalculationParameters resolveCalculationParameters({
     required double latitude,
     required double longitude,
@@ -13,7 +13,14 @@ class PrayerTimeService {
     final country = countryName?.toLowerCase().trim() ?? '';
     CalculationParameters params;
 
-    if (country.contains('turkey') ||
+    if (country.contains('united states') ||
+        country.contains('america') ||
+        country.contains('usa') ||
+        country.contains('canada') ||
+        country == 'us' ||
+        country == 'ca') {
+      params = CalculationMethod.north_america.getParameters();
+    } else if (country.contains('turkey') ||
         country.contains('türkiye') ||
         country.contains('turkiye') ||
         country == 'tr') {
@@ -22,7 +29,14 @@ class PrayerTimeService {
         country.contains('makkah') ||
         country.contains('mecca') ||
         country.contains('arabia') ||
-        country == 'sa') {
+        country.contains('uae') ||
+        country.contains('emirates') ||
+        country.contains('dubai') ||
+        country.contains('qatar') ||
+        country.contains('kuwait') ||
+        country.contains('bahrain') ||
+        country == 'sa' ||
+        country == 'ae') {
       params = CalculationMethod.umm_al_qura.getParameters();
     } else if (country.contains('egypt') ||
         country.contains('cairo') ||
@@ -35,21 +49,6 @@ class PrayerTimeService {
         country == 'in' ||
         country == 'bd') {
       params = CalculationMethod.karachi.getParameters();
-    } else if (country.contains('dubai') ||
-        country.contains('uae') ||
-        country.contains('emirates') ||
-        country == 'ae') {
-      params = CalculationMethod.dubai.getParameters();
-    } else if (country.contains('qatar') || country == 'qa') {
-      params = CalculationMethod.qatar.getParameters();
-    } else if (country.contains('kuwait') || country == 'kw') {
-      params = CalculationMethod.kuwait.getParameters();
-    } else if (country.contains('states') ||
-        country.contains('canada') ||
-        country.contains('america') ||
-        country == 'us' ||
-        country == 'ca') {
-      params = CalculationMethod.north_america.getParameters();
     } else {
       params = CalculationMethod.muslim_world_league.getParameters();
     }
@@ -63,10 +62,25 @@ class PrayerTimeService {
     required double latitude,
     required double longitude,
     String? countryName,
+    String? cityName,
+    bool isManual = false,
+    Duration? customUtcOffset,
     DateTime? date,
     Madhab madhab = Madhab.shafi,
   }) {
-    final targetDate = date ?? DateTime.now();
+    final utcOffset = customUtcOffset ??
+        TimezoneService.getUtcOffset(
+          latitude: latitude,
+          longitude: longitude,
+          country: countryName,
+          city: cityName,
+          isManual: isManual,
+        );
+
+    final nowUtc = DateTime.now().toUtc();
+    final targetNow = nowUtc.add(utcOffset);
+    final targetDate = date ?? targetNow;
+
     final coordinates = Coordinates(latitude, longitude);
     final params = resolveCalculationParameters(
       latitude: latitude,
@@ -81,62 +95,75 @@ class PrayerTimeService {
       params,
     );
 
-    final timeFormat = DateFormat.Hm();
     final entries = <PrayerTimeEntry>[
       _entry(
         PrayerName.fajr,
         'Fajr',
         prayerTimes.fajr,
-        timeFormat,
+        utcOffset,
       ),
       _entry(
         PrayerName.sunrise,
         'Sunrise',
         prayerTimes.sunrise,
-        timeFormat,
+        utcOffset,
       ),
       _entry(
         PrayerName.dhuhr,
         'Dhuhr',
         prayerTimes.dhuhr,
-        timeFormat,
+        utcOffset,
       ),
       _entry(
         PrayerName.asr,
         'Asr',
         prayerTimes.asr,
-        timeFormat,
+        utcOffset,
       ),
       _entry(
         PrayerName.maghrib,
         'Maghrib',
         prayerTimes.maghrib,
-        timeFormat,
+        utcOffset,
       ),
       _entry(
         PrayerName.isha,
         'Isha',
         prayerTimes.isha,
-        timeFormat,
+        utcOffset,
       ),
     ];
 
     return DailyPrayerTimes(
       prayers: entries,
-      nextPrayer: _nextPrayer(entries, targetDate),
+      nextPrayer: _nextPrayer(entries, targetNow),
       date: targetDate,
     );
   }
 
-  /// Calculates prayer times for every day of the given month using accurate location parameters.
+  /// Calculates prayer times for every day of the given month using accurate location parameters and timezone offsets.
   List<DailyPrayerTimes> calculateMonthlyPrayerTimes({
     required double latitude,
     required double longitude,
     String? countryName,
+    String? cityName,
+    bool isManual = false,
+    Duration? customUtcOffset,
     DateTime? monthDate,
     Madhab madhab = Madhab.shafi,
   }) {
-    final refDate = monthDate ?? DateTime.now();
+    final utcOffset = customUtcOffset ??
+        TimezoneService.getUtcOffset(
+          latitude: latitude,
+          longitude: longitude,
+          country: countryName,
+          city: cityName,
+          isManual: isManual,
+        );
+
+    final nowUtc = DateTime.now().toUtc();
+    final targetNow = nowUtc.add(utcOffset);
+    final refDate = monthDate ?? targetNow;
     final daysInMonth = DateTime(refDate.year, refDate.month + 1, 0).day;
     final monthlyList = <DailyPrayerTimes>[];
 
@@ -146,6 +173,9 @@ class PrayerTimeService {
         latitude: latitude,
         longitude: longitude,
         countryName: countryName,
+        cityName: cityName,
+        isManual: isManual,
+        customUtcOffset: utcOffset,
         date: date,
         madhab: madhab,
       );
@@ -158,20 +188,28 @@ class PrayerTimeService {
   PrayerTimeEntry _entry(
     PrayerName name,
     String displayName,
-    DateTime time,
-    DateFormat timeFormat,
+    DateTime rawTime,
+    Duration utcOffset,
   ) {
+    // rawTime is in UTC from adhan library
+    final utcTime = rawTime.toUtc();
+    // Convert to target city local time by adding target UTC offset
+    final targetLocalTime = utcTime.add(utcOffset);
+    final hours = targetLocalTime.hour.toString().padLeft(2, '0');
+    final minutes = targetLocalTime.minute.toString().padLeft(2, '0');
+    final formattedTime = '$hours:$minutes';
+
     return PrayerTimeEntry(
       name: name,
-      time: time,
+      time: targetLocalTime,
       displayName: displayName,
-      formattedTime: timeFormat.format(time),
+      formattedTime: formattedTime,
     );
   }
 
-  PrayerName? _nextPrayer(List<PrayerTimeEntry> prayers, DateTime now) {
+  PrayerName? _nextPrayer(List<PrayerTimeEntry> prayers, DateTime targetNow) {
     for (final prayer in prayers) {
-      if (prayer.time.isAfter(now)) {
+      if (prayer.time.isAfter(targetNow)) {
         return prayer.name;
       }
     }

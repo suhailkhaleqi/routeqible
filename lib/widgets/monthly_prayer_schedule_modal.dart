@@ -23,6 +23,9 @@ class MonthlyPrayerScheduleModal extends StatelessWidget {
       latitude: location.latitude,
       longitude: location.longitude,
       countryName: location.displayCountry,
+      cityName: location.displayCity,
+      isManual: location.isManual,
+      customUtcOffset: location.customUtcOffset,
       monthDate: now,
     );
 

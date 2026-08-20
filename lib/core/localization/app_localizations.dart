@@ -70,6 +70,11 @@ class AppLocalizations {
       'isha': 'Isha',
       'notifications': 'Notifications',
       'disabled': 'Disabled',
+      'menu': 'Menu',
+      'verseOfTheDay': 'Verse of the Day',
+      'addToHomeScreen': 'Add Widget to Home Screen',
+      'shareVerse': 'Share Verse',
+      'widgetSynced': 'Verse of the Day Widget Synced to Home Screen!',
     },
     'tr': {
       'settings': 'Ayarlar',
@@ -125,6 +130,11 @@ class AppLocalizations {
       'isha': 'Yatsı',
       'notifications': 'Bildirimler',
       'disabled': 'Devre Dışı',
+      'menu': 'Menü',
+      'verseOfTheDay': 'Günün Ayeti',
+      'addToHomeScreen': 'Ana Ekrana Ekle',
+      'shareVerse': 'Ayeti Paylaş',
+      'widgetSynced': 'Günün Ayeti Widget\'ı Ana Ekrana Eklendi!',
     },
     'ar': {
       'settings': 'الإعدادات',
@@ -180,6 +190,11 @@ class AppLocalizations {
       'isha': 'العشاء',
       'notifications': 'الإشعارات',
       'disabled': 'معطلة',
+      'menu': 'القائمة',
+      'verseOfTheDay': 'آية اليوم',
+      'addToHomeScreen': 'إضافة إلى الشاشة الرئيسية',
+      'shareVerse': 'مشاركة الآية',
+      'widgetSynced': 'تمت مزامنة آية اليوم مع الشاشة الرئيسية!',
     },
     'es': {
       'settings': 'Ajustes',
@@ -658,6 +673,11 @@ class AppLocalizations {
   String get isha => _text('isha');
   String get notifications => _text('notifications');
   String get disabled => _text('disabled');
+  String get menu => _text('menu');
+  String get verseOfTheDay => _text('verseOfTheDay');
+  String get addToHomeScreen => _text('addToHomeScreen');
+  String get shareVerse => _text('shareVerse');
+  String get widgetSynced => _text('widgetSynced');
 
   String _text(String key) {
     final langCode = locale.languageCode.toLowerCase();
