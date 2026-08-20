@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:routeqible/constants/app_colors.dart';
 import 'package:routeqible/core/localization/app_localizations.dart';
 import 'package:routeqible/models/app_location.dart';
@@ -6,11 +6,11 @@ import 'package:routeqible/models/prayer_times.dart';
 import 'package:routeqible/services/prayer_time_service.dart';
 import 'package:routeqible/services/prayer_tracker_service.dart';
 import 'package:routeqible/services/qada_tracker_service.dart';
-import 'package:routeqible/widgets/location_card.dart';
 import 'package:routeqible/widgets/monthly_prayer_schedule_modal.dart';
 import 'package:routeqible/widgets/prayer_times_list.dart';
 import 'package:routeqible/widgets/prayer_tracker_card.dart';
 import 'package:routeqible/widgets/qada_tracker_card.dart';
+import 'package:routeqible/widgets/sky_prayer_countdown_card.dart';
 
 class PrayersScreen extends StatelessWidget {
   const PrayersScreen({
@@ -122,10 +122,10 @@ class PrayersScreen extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(top: 12, bottom: 24),
       children: [
-        LocationCard(
+        // Top Rich Celestial Sky-Gradient Live Countdown & Prayer Pills Widget
+        SkyPrayerCountdownCard(
           location: location!,
-          onTapSearch: onTapSearchLocation,
-          distanceToKaabaKm: distanceToKaabaKm,
+          prayerTimes: prayerTimes!,
         ),
         const SizedBox(height: 16),
 
