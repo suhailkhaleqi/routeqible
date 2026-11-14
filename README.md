@@ -5,7 +5,7 @@ RouteQibla is a Flutter app for everyday Muslim worship. It brings Qibla directi
 
 | Qibla compass | Prayer times |
 ![image alt](https://github.com/suhailkhaleqi/routeqible/blob/8d442ca5a2f4ff4d892e0540f392a192cfdd85fe/images/compass%20screen.jpg)
- | ![Prayer times, prayer tracker, and qada tracker](screenshots/prayer-times.png) |
+![image alt](https://github.com/suhailkhaleqi/routeqible/blob/c6a4ca996a087c3f34ec8a36be67acf854945249/images/prayer%20times.jpg)
 
 | Quran | Tasbih |
 | --- | --- |
